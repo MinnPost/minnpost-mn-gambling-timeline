@@ -446,7 +446,7 @@
       
       <div id="application-container" class="clear-block">
       
-        <div id="buttons">
+        <div id="buttons" class="clear-block clear">
           <div id="expand-collapse-buttons">
             <a class="expand-all active" href="#"><span>EXPAND ALL</span></a>
             <a class="collapse-all" href="#"><span>COLLAPSE ALL</span></a>
@@ -462,15 +462,16 @@
           <span>Loading timeline data...</span>
         </div>
         
-        <div id="timeline">
-          <div id="line-container">
-            <div id="line"></div>
+        <div class="clear-block">
+          <div id="timeline">
+            <div id="line-container">
+              <div id="line"></div>
+            </div>
           </div>
         </div>
-        
       </div>
       
-      <p class="footnote">Minnesota Graduation-Required Assessments for Diploma (GRAD) sample test provided by <a href="http://www.mnstateassessments.org/itemsamplers.html#GRADsamplers" target="_blank">MN Assessment portal</a>.  2012 MN GRAD results from the <a href="http://education.state.mn.us/MDE/SchSup/TestAdmin/MNTests/TechRep/index.html" target="_blank">Minnesota Department of Education</a>.  <a href="http://thenounproject.com/noun/calculator/#icon-No804" target="_blank">Calculator</a> designed by <a href="http://thenounproject.com/iconify" target="_blank">Scott Lewis</a> from The Noun Project</p>
+      <!-- <p class="footnote"></p> -->
     </div>
     
     
@@ -505,13 +506,15 @@
             <div class="clearfix">
               {{#if read_more_url}}
                 <a target="_blank" class="more" href="{{read_more_url}}">READ MORE</a>
-                <div class="share">
-                  <a href="#" class="share-trigger"></a>
-                  <div class="share-popup">
-                    <a href="https://twitter.com/share" class="twitter-share-button" data-url="{{read_more_url}}" data-text="{{title}}" data-count="none">Tweet</a>
-                    <a class="facebook-share-button" name="fb_share" type="button" share_url="{{read_more_url}}">Share</a>
+                {{#if sharing}}
+                  <div class="share">
+                    <a href="#" class="share-trigger"></a>
+                    <div class="share-popup">
+                      <a href="https://twitter.com/share" class="twitter-share-button" data-url="{{read_more_url}}" data-text="{{title}}" data-count="none">Tweet</a>
+                      <a class="facebook-share-button" name="fb_share" type="button" share_url="{{read_more_url}}">Share</a>
+                    </div>
                   </div>
-                </div>
+                {{/if}}
               {{/if}}
             </div>
           </div>
@@ -525,11 +528,6 @@
       window.jQuery || document.write('<script type="text/javascript" src="https://s3.amazonaws.com/data.minnpost/js/jquery-1.3.2/jquery-1.3.2.min.js"><\/script>')
     </script>
     
-    <!--[if lte IE 8]>
-      <script type="text/javascript" src="https://s3.amazonaws.com/data.minnpost/js/es5-shim-master-20120801/es5-shim.min.js"></script>
-    <![endif]-->
-    
-    <script type="text/javascript" src="https://s3.amazonaws.com/data.minnpost/js/modernizr-2.6.1/modernizr-2.6.1-html5boilerplate.min.js"></script>
     <script type="text/javascript" src="https://s3.amazonaws.com/data.minnpost/js/jquery-custom-master-20120606/jquery-1.7.2.custom.min.js"></script>
     <script type="text/javascript" src="https://s3.amazonaws.com/data.minnpost/js/handlebars-v1.0.rc.1/handlebars-1.0.rc.1.min.js"></script>
     <script type="text/javascript" src="https://s3.amazonaws.com/data.minnpost/js/tabletop-master-20121204/tabletop.min.js"></script>
@@ -546,12 +544,15 @@
          * Configuration for timeline.  defaultDirection should be
          * "newest" or "oldest".  groupFunction is a function
          * to handle grouping.
+         *
+         * Sharing is using old APIs and breaks in some browsers.
          */
         var timelineConfig = {
           key: 'https://docs.google.com/spreadsheet/pub?key=0AtX8MXQ89fOKdDZadGcyNE9CZmFZV29tQjI5RFU3X3c&output=html',
           sheetName: 'timeline-data',
-          defaultDirection: 'newest',
-          groupFunction: groupSegmentByDecade
+          defaultDirection: 'oldest',
+          groupFunction: groupSegmentByDecade,
+          sharing: false
         };
         
         /**
@@ -610,6 +611,8 @@
               // Create groups (by year or whatever)
               groups = timelineConfig.groupFunction(val, groups, timelineConfig.defaultDirection);
         
+              // Add any other data
+              val.sharing = timelineConfig.sharing;
               // Add output to timeline
               $('#timeline').append(postTemplate(val));
             });
@@ -618,6 +621,12 @@
             $.each(groups, function(i, group) {
               $('#timeline').append(groupMarkerTemplate(group));
             });
+            
+            // Handle default sort direction
+            if (timelineConfig.defaultDirection != 'newest') {
+              $('#sort-buttons a').removeClass('active');
+              $('#sort-buttons a.sort-oldest').addClass('active');
+            }
         
             // Start rendering isotope goodness when images are loaded.
             $('#timeline').imagesLoaded(function() {
@@ -634,14 +643,16 @@
                   }
                 },
                 sortBy: 'timestamp',
-                sortAscending: false,
+                sortAscending: (timelineConfig.defaultDirection == 'newest') ? false : true,
                 itemPositionDataEnabled: true
               });
             });
         
             // load scripts after all the html has been set
-            $.getScript('//static.ak.fbcdn.net/connect.php/js/FB.Share');
-            $.getScript('//platform.twitter.com/widgets.js');
+            if (timelineConfig.sharing) {
+              $.getScript('//static.ak.fbcdn.net/connect.php/js/FB.Share');
+              $.getScript('//platform.twitter.com/widgets.js');
+            }
         
             // add open/close buttons to each post
             $('#timeline .item.post').each(function() {
