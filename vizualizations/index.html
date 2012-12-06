@@ -495,7 +495,7 @@
               <div class="caption">({{caption}})</div>
             {{/if}}
             {{#if body}}
-              <div class="text">{{body}}</div>
+              <div class="text">{{{body}}}</div>
             {{/if}}
             <div class="clearfix">
               {{#if read_more_url}}
@@ -542,10 +542,7 @@
           sheetName: 'timeline-data'
         }
         
-        
-        
         $(document).ready(function() {
-        
           var direction = 'newest';
         
           /**
