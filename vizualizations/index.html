@@ -400,6 +400,7 @@
       }
       
       
+      
       /**
        * Responsive creen size styles
        */
@@ -457,6 +458,10 @@
           </div>
         </div>
   
+        <div class="loading-general">
+          <span>Loading timeline data...</span>
+        </div>
+        
         <div id="timeline">
           <div id="line-container">
             <div id="line"></div>
@@ -538,18 +543,21 @@
       jQueryCustom.noConflict();
       (function($, w, undefined) {
         /**
-         * Configuration for google doc.
+         * Configuration for timeline.  defaultDirection should be
+         * "newest" or "oldest".  groupFunction is a function
+         * to handle grouping.
          */
         var timelineConfig = {
           key: 'https://docs.google.com/spreadsheet/pub?key=0AtX8MXQ89fOKdDZadGcyNE9CZmFZV29tQjI5RFU3X3c&output=html',
           sheetName: 'timeline-data',
-          defaultDirection: 'newest'
+          defaultDirection: 'newest',
+          groupFunction: groupSegmentByDecade
         };
         
         /**
          * Grouping function.  Change this for different grouping.
          */
-        function groupSegment(segment, groups, direction) {
+        function groupSegmentByDecade(segment, groups, direction) {
           // Grouping by decade
           var year = new Date(segment.timestamp).getFullYear();
           var yearStr = year.toString();
@@ -594,10 +602,13 @@
             var postTemplate  = Handlebars.compile($('#post-template').html());
             var groupMarkerTemplate  = Handlebars.compile($('#group-marker-template').html());
             
+            // Remove load message
+            $('.loading-general').slideUp('fast');
+            
             // Go through data from the sheet.
             $.each(tabletop.sheets(timelineConfig.sheetName).all(), function(i, val) {
               // Create groups (by year or whatever)
-              groups = groupSegment(val, groups, timelineConfig.defaultDirection);
+              groups = timelineConfig.groupFunction(val, groups, timelineConfig.defaultDirection);
         
               // Add output to timeline
               $('#timeline').append(postTemplate(val));
