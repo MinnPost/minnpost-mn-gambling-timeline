@@ -254,27 +254,27 @@
         background: transparent url(https://s3.amazonaws.com/data.minnpost/js/balancemedia-Timeline-master-20121204/img/tab-right.png) no-repeat left;
         left: -54px;
       }
-      #timeline .year-marker {
+      #timeline .group-marker {
         float: left;
         width: 80px;
         margin: 50px 0 15px 0;
       }
-      #timeline .year-marker.top{
+      #timeline .group-marker.top{
         margin-top: 0;
       }
-      #timeline .year-marker .inner{
+      #timeline .group-marker .inner{
         width: 76px;
         height: 26px;
         padding: 2px;
         background-color: #FFF;
       }
-      #timeline .year-marker .inner2{
+      #timeline .group-marker .inner2{
         background-color: #434a50;
         -webkit-border-radius: 2px;
         -moz-border-radius: 2px;
         border-radius: 2px;
       }
-      #timeline .year{
+      #timeline .group{
         text-align: center;
         color: #fff;
         font-size: 14px;
@@ -471,11 +471,11 @@
     
     <!-- Templates to be used in client side processing. -->
     <script id="group-marker-template" type="text/x-handlebars-template">
-      <div class="item year-marker item-group-{{id}}" data-id="{{id}}">
+      <div class="item group-marker item-group-{{id}}" data-id="{{id}}">
         <div class="inner">
           <div class="inner2">
             <div class="timestamp">{{timestamp}}</div>
-            <div class="year">{{groupDisplay}}</div>
+            <div class="group">{{groupDisplay}}</div>
           </div>
         </div>
       </div>
@@ -683,7 +683,7 @@
            * Update group markers as they are an interval.
            */
           function updateGroupMarkers(direction) {
-            $('.year-marker').each(function() {
+            $('.group-marker').each(function() {
               var $this = $(this);
               var id = $this.attr('data-id');
               var timestamp = (direction) ? 
@@ -715,7 +715,7 @@
         
             $('#sort-buttons a').removeClass('active');
             $this.addClass('active');
-            var $yearMarkers = $('.year-markers');
+            var $yearMarkers = $('.group-markers');
             if ($this.hasClass('sort-newest')) {
               updateGroupMarkers(false);
               $('#timeline').isotope('reloadItems').isotope({sortAscending: false});
@@ -758,7 +758,7 @@
             if (i == $elems.length - 1)
               $this.addClass('last');
             var x, y;
-            if ($this.hasClass('year-marker')) {
+            if ($this.hasClass('group-marker')) {
               var width = $this.width();
               x = centerX - (width / 2);
               if (props.colA >= props.colB) {
