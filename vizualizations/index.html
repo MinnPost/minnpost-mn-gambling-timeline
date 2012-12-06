@@ -568,10 +568,10 @@
             id: id,
             groupDisplay: id + '0\'s',
             timestamp: (direction == 'newest') ? 
-              Date.parse('Decmber 31, ' + id + '9') :
+              Date.parse('December 31, ' + id + '9') :
               Date.parse('January 1, ' + id + '0'),
             timestampStart: Date.parse('January 1, ' + id + '0'),
-            timestampEnd: Date.parse('Decmber 31, ' + id + '9'),
+            timestampEnd: Date.parse('December 31, ' + id + '9')
           };
           
           return groups;
@@ -724,7 +724,11 @@
             var dateHeight = $lastItem.find('.date').height();
             var dateOffset = $lastItem.find('.date').position();
             var innerMargin = parseInt($lastItem.find('.inner').css('marginTop'));
-            var lineHeight = itemPosition.y + innerMargin + dateOffset.top + (dateHeight / 2);
+            
+            var top = (dateOffset == null) ? 0 : parseInt(dateOffset.top);
+            var y = (itemPosition != null && itemPosition.y != null) ? 
+              parseInt(itemPosition.y) : 0;
+            var lineHeight = y + innerMargin + top + (dateHeight / 2);
             $('#line').height(lineHeight);
           }
         
@@ -737,7 +741,6 @@
         
             $('#sort-buttons a').removeClass('active');
             $this.addClass('active');
-            var $yearMarkers = $('.group-markers');
             if ($this.hasClass('sort-newest')) {
               updateGroupMarkers(false);
               $('#timeline').isotope('reloadItems').isotope({sortAscending: false});
@@ -752,8 +755,6 @@
           $('#timeline').resize(function() { // uses "jQuery resize event" plugin
             adjustLine();
           });
-          
-          
         });
         
         
