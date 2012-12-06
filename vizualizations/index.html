@@ -470,12 +470,12 @@
     
     
     <!-- Templates to be used in client side processing. -->
-    <script id="year-marker-template" type="text/x-handlebars-template">
-      <div class="item year-marker">
+    <script id="group-marker-template" type="text/x-handlebars-template">
+      <div class="item year-marker item-group-{{id}}" data-id="{{id}}">
         <div class="inner">
           <div class="inner2">
             <div class="timestamp">{{timestamp}}</div>
-            <div class="year">{{year}}</div>
+            <div class="year">{{groupDisplay}}</div>
           </div>
         </div>
       </div>
@@ -537,13 +537,42 @@
     <script type="text/javascript">
       jQueryCustom.noConflict();
       (function($, w, undefined) {
+        /**
+         * Configuration for google doc.
+         */
         var timelineConfig = {
           key: 'https://docs.google.com/spreadsheet/pub?key=0AtX8MXQ89fOKdDZadGcyNE9CZmFZV29tQjI5RFU3X3c&output=html',
-          sheetName: 'timeline-data'
-        }
+          sheetName: 'timeline-data',
+          defaultDirection: 'newest'
+        };
         
+        /**
+         * Grouping function.  Change this for different grouping.
+         */
+        function groupSegment(segment, groups, direction) {
+          // Grouping by decade
+          var year = new Date(segment.timestamp).getFullYear();
+          var yearStr = year.toString();
+          var id = yearStr.slice(0, -1);
+          
+          groups[id] = {
+            id: id,
+            groupDisplay: id + '0\'s',
+            timestamp: (direction == 'newest') ? 
+              Date.parse('Decmber 31, ' + id + '9') :
+              Date.parse('January 1, ' + id + '0'),
+            timestampStart: Date.parse('January 1, ' + id + '0'),
+            timestampEnd: Date.parse('Decmber 31, ' + id + '9'),
+          };
+          
+          return groups;
+        };
+        
+        // Kick things off
         $(document).ready(function() {
-          var direction = 'newest';
+          // Variables used across application (not the best way to
+          // do this.
+          var groups = {};
         
           // Get data via Tabletop
           Tabletop.init({
@@ -559,59 +588,27 @@
           });
         
           /**
-           * Get the timestamp (milliseconds) given the year.
-           * If beginning is true, timestamp is 1/1/year 12:00:00:000
-           * If beginning is false, timestamp is 12/31/year 23:59:59:999
-           */
-          function getTimestamp(year, beginning) {
-            if (beginning) {
-              return Date.parse('January 1, ' + year);
-            }
-            else {
-              // plus 1 day, minus 1 millisecond
-              return Date.parse('December 31, ' + year) + 86400000 - 1 ;
-            }
-          }
-        
-          /**
-           * Load the data into Isotope
+           * Load the data in for isotope processing
            */
           function setupTimeline(data, tabletop) {
-            // load the Handlebar templates into memory
-            var source = $('#post-template').html();
-            var postTemplate  = Handlebars.compile(source);
-            source = $('#year-marker-template').html();
-            var yearMarkerTemplate  = Handlebars.compile(source);
-        
-            var years = [];
+            var postTemplate  = Handlebars.compile($('#post-template').html());
+            var groupMarkerTemplate  = Handlebars.compile($('#group-marker-template').html());
+            
+            // Go through data from the sheet.
             $.each(tabletop.sheets(timelineConfig.sheetName).all(), function(i, val) {
-              // save the years so we can create year markers
-              var year = new Date(val.timestamp).getFullYear();
-              if (years.indexOf(year) < 0) {
-                years[years.length] = year;
-              }
+              // Create groups (by year or whatever)
+              groups = groupSegment(val, groups, timelineConfig.defaultDirection);
         
-              // combine data & templqate
-              var html = postTemplate(val);
-              $('#timeline').append(html);
+              // Add output to timeline
+              $('#timeline').append(postTemplate(val));
+            });
+
+            // Add a group marker for each group
+            $.each(groups, function(i, group) {
+              $('#timeline').append(groupMarkerTemplate(group));
             });
         
-            // add a year marker for each year that has a post
-            $.each(years, function(i, val) {
-              var timestamp;
-              
-              if (direction == 'newest') {
-                timestamp = getTimestamp(val, false);
-              }
-              else{
-                timestamp = getTimestamp(val, true);
-              }
-              
-              var context = {year: val, timestamp: timestamp};
-              var html = yearMarkerTemplate(context);
-              $('#timeline').append(html);
-            });
-        
+            // Start rendering isotope goodness when images are loaded.
             $('#timeline').imagesLoaded(function() {
               $('#timeline').isotope({
                 itemSelector : '.item',
@@ -683,14 +680,15 @@
           }
         
           /*
-           * Set the timestamp of the year markers to either the beginning or end of
-           * the year
+           * Update group markers as they are an interval.
            */
-          function updateYearMarkers(beginning) {
+          function updateGroupMarkers(direction) {
             $('.year-marker').each(function() {
               var $this = $(this);
-              var year = parseInt($this.find('.year').text());
-              var timestamp = getTimestamp(year, beginning);
+              var id = $this.attr('data-id');
+              var timestamp = (direction) ? 
+                groups[id].timestampStart : groups[id].timestampEnd;
+              
               $this.find('.timestamp').text(timestamp);
             });
           }
@@ -719,11 +717,11 @@
             $this.addClass('active');
             var $yearMarkers = $('.year-markers');
             if ($this.hasClass('sort-newest')) {
-              updateYearMarkers(false);
+              updateGroupMarkers(false);
               $('#timeline').isotope('reloadItems').isotope({sortAscending: false});
             }
             else{
-              updateYearMarkers(true);
+              updateGroupMarkers(true);
               $('#timeline').isotope('reloadItems').isotope({sortAscending: true});
             }
             e.preventDefault();
